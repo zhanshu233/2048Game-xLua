@@ -1,3 +1,0 @@
---Lua脚本 
-
-CS.UnityEngine.GameObject( "New" )
