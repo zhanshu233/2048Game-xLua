@@ -8,3 +8,4 @@
 
 
 print("下载成功")
+local canvas = CS.UnityEngine.GameObject( "GameCanvas", typeof( Canvas ) )
