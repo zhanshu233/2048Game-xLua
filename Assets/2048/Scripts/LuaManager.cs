@@ -39,12 +39,17 @@ public class LuaManager : MonoBehaviour
 	{ 
 //		StartCoroutine( LoadLuaScript() );
 		string script = @"
+-------------------------------------初始化配置-------------------------------------
 local screenX  = 640 -- 屏幕的宽度
 local screenY  = 960 -- 屏幕的高度
 local gameBgXY = 600 -- 游戏主界面的宽度和高度
 local pointXY  = 130 -- 每个小格子的宽度和高度
 local colorBg  = CS.UnityEngine.Color( 150/255, 137/255, 125/255, 1 )
 local color0   = CS.UnityEngine.Color( 204/255, 192/255, 178/255, 1 ) -- 后期可以考虑用一个function获取颜色
+local setCell  = function( bg, num ) -- 要修改
+	bg.color = color0
+	num.text = '0'
+end
 			
 -------------------------------------初始化画布-------------------------------------
 local cvsObj = CS.UnityEngine.GameObject( 'GameCanvas' )
@@ -76,25 +81,71 @@ for i = 1, 4 do
 		potImg.rectTransform.sizeDelta = CS.UnityEngine.Vector2( pointXY, pointXY )
 		potImg.rectTransform.anchoredPosition3D = CS.UnityEngine.Vector3( calPointXY( j ), calPointXY( i ), 0 )
 		potImg.color = color0
-		potArr[ i ][ j ] = potObj
+		local txtObj = CS.UnityEngine.GameObject( 'number' )
+		local number = txtObj : AddComponent( typeof( CS.UnityEngine.UI.Text ) )
+		txtObj.transform.parent = potObj.transform
+		number.rectTransform.sizeDelta = CS.UnityEngine.Vector2( pointXY, pointXY )
+		number.rectTransform.anchoredPosition3D = CS.UnityEngine.Vector3.zero
+		number.font = CS.UnityEngine.Resources.Load( 'MONACO' )
+		number.alignment = CS.UnityEngine.TextAnchor.MiddleCenter
+		number.horizontalOverflow = CS.UnityEngine.HorizontalWrapMode.Overflow
+		number.fontSize = 53
+		number.text = '0'
+		potArr[ i ][ j ] = { count = number.text, color = potImg.color }
 	end
 end
 
--------------------------------------初始化控制按钮-------------------------------------
-for i = 1, 4 do
-	local btnObj = CS.UnityEngine.GameObject( 'Button_' .. i )
-	local button = btnObj : AddComponent( typeof( CS.UnityEngine.UI.Button ) )
-	local btnImg = btnObj : AddComponent( typeof( CS.UnityEngine.UI.RawImage ) )
-	btnObj.transform.parent = cvsObj.transform
-	btnImg.rectTransform.sizeDelta = CS.UnityEngine.Vector2( pointXY, pointXY )
-	btnImg.rectTransform.anchoredPosition3D = CS.UnityEngine.Vector3( calPointXY( i ), -390, 0 )
-	button.targetGraphic = btnImg
-	button.onClick : AddListener( click )
+-------------------------------------游戏是否失败的检测-------------------------------------
+
+
+-------------------------------------格子是否全满的检测-------------------------------------
+local isFull = function()
+	for i = 1, 4 do
+		for j = 1, 4 do
+			if potArr[ i ][ j ].count == '0' then 
+				return false
+			end
+		end
+	end
+	return true
 end
 
-function click()
-	print( 'zzz' )
+-------------------------------------随机位置产生数字-------------------------------------
+local crtCel = function()
+	math.randomseed(os.time())
+	i = math.random( 4 )
+	j = math.random( 4 )
+	
 end
+
+-------------------------------------鼠标滑动监听事件-------------------------------------
+local evtTrg = imgObj : AddComponent( typeof( CS.UnityEngine.EventSystems.EventTrigger ) ) 
+local staPot = CS.UnityEngine.Vector3.zero
+local endPot = CS.UnityEngine.Vector3.zero
+local calDir = function()
+	-- TODO: 计算方向
+end
+
+---------------按下事件---------------
+local entry1  = CS.UnityEngine.EventSystems.EventTrigger.Entry()
+entry1.eventID = CS.UnityEngine.EventSystems.EventTriggerType.PointerDown
+entry1.callback = CS.UnityEngine.EventSystems.EventTrigger.TriggerEvent()
+entry1.callback : AddListener( function() 
+	print( ' - 按下 - ' .. CS.UnityEngine.Input.mousePosition : ToString() ) 
+	staPot = CS.UnityEngine.Input.mousePosition
+end )
+evtTrg.triggers : Add( entry1 )
+
+---------------抬起事件---------------
+local entry2  = CS.UnityEngine.EventSystems.EventTrigger.Entry()
+entry2.eventID = CS.UnityEngine.EventSystems.EventTriggerType.PointerUp
+entry2.callback = CS.UnityEngine.EventSystems.EventTrigger.TriggerEvent()
+entry2.callback : AddListener( function() 
+	print( ' - 抬起 - ' .. CS.UnityEngine.Input.mousePosition : ToString() ) 
+	endPot = CS.UnityEngine.Input.mousePosition
+	calDir()
+end )
+evtTrg.triggers : Add( entry2 )
 		";
 		StartLuaVM( script );
 	}
