@@ -58,7 +58,7 @@ local cvsSca = cvsObj : AddComponent( typeof( CS.UnityEngine.UI.CanvasScaler ) )
 local gpcRct = cvsObj : AddComponent( typeof( CS.UnityEngine.UI.GraphicRaycaster ) )
 local imgObj = CS.UnityEngine.GameObject( 'RawImageBG' )
 local rImgBG = imgObj : AddComponent( typeof( CS.UnityEngine.UI.RawImage ) )
-local potArr = {}
+potArr = {}
 			
 canvas.renderMode = CS.UnityEngine.RenderMode.ScreenSpaceOverlay
 cvsSca.uiScaleMode = CS.UnityEngine.UI.CanvasScaler.ScaleMode.ScaleWithScreenSize
@@ -91,31 +91,72 @@ for i = 1, 4 do
 		number.horizontalOverflow = CS.UnityEngine.HorizontalWrapMode.Overflow
 		number.fontSize = 53
 		number.text = '0'
-		potArr[ i ][ j ] = { count = number.text, color = potImg.color }
+		potArr[ i ][ j ] = { count = number, potImg = potImg }
 	end
 end
-
--------------------------------------游戏是否失败的检测-------------------------------------
-
 
 -------------------------------------格子是否全满的检测-------------------------------------
 local isFull = function()
 	for i = 1, 4 do
 		for j = 1, 4 do
-			if potArr[ i ][ j ].count == '0' then 
+			if potArr[ i ][ j ][ 'count' ].text == '0' then 
 				return false
 			end
 		end
 	end
+--	print( '格子满啦' )
 	return true
 end
 
 -------------------------------------随机位置产生数字-------------------------------------
-local crtCel = function()
+local CreatCell = function()
 	math.randomseed(os.time())
 	i = math.random( 4 )
 	j = math.random( 4 )
-	
+	if potArr[ i ][ j ][ 'count' ].text == '0' then
+		k = math.random( 10 )
+		if k < 3 then
+			potArr[ i ][ j ][ 'count' ].text = '4'
+--			print( '生成一个4' )
+		else
+			potArr[ i ][ j ][ 'count' ].text = '2'
+--			print( '生成一个2' )
+		end
+		return true
+	else
+		return false
+	end
+end
+
+local DoCreatCell = function()
+	if isFull() == true then return end
+	bool = false
+	while ( bool == false ) do
+		bool = CreatCell()
+	end
+end
+
+-----游戏开始-----
+DoCreatCell()
+DoCreatCell()
+
+-------------------------------------数字合并-------------------------------------
+local DoLeft = function()
+	for i = 1, 4 do
+		for j = 2, 4 do
+			for k = 1, j - 1 do
+				if potArr[ i ][ j ][ 'count' ].text ~= '0' then
+					if potArr[ i ][ k ][ 'count' ].text == '0' then
+						potArr[ i ][ k ][ 'count' ].text = potArr[ i ][ j ][ 'count' ].text
+						potArr[ i ][ j ][ 'count' ].text = '0'
+					elseif potArr[ i ][ k ][ 'count' ].text == potArr[ i ][ j ][ 'count' ].text then
+						potArr[ i ][ k ][ 'count' ].text = tostring( tonumber( potArr[ i ][ k ][ 'count' ].text ) * 2 )
+						potArr[ i ][ j ][ 'count' ].text = '0'
+					end
+				end
+			end
+		end
+	end
 end
 
 -------------------------------------鼠标滑动监听事件-------------------------------------
@@ -131,7 +172,9 @@ local entry1  = CS.UnityEngine.EventSystems.EventTrigger.Entry()
 entry1.eventID = CS.UnityEngine.EventSystems.EventTriggerType.PointerDown
 entry1.callback = CS.UnityEngine.EventSystems.EventTrigger.TriggerEvent()
 entry1.callback : AddListener( function() 
-	print( ' - 按下 - ' .. CS.UnityEngine.Input.mousePosition : ToString() ) 
+--	print( ' - 按下 - ' .. CS.UnityEngine.Input.mousePosition : ToString() ) 
+	DoLeft()
+	DoCreatCell()
 	staPot = CS.UnityEngine.Input.mousePosition
 end )
 evtTrg.triggers : Add( entry1 )
@@ -141,7 +184,7 @@ local entry2  = CS.UnityEngine.EventSystems.EventTrigger.Entry()
 entry2.eventID = CS.UnityEngine.EventSystems.EventTriggerType.PointerUp
 entry2.callback = CS.UnityEngine.EventSystems.EventTrigger.TriggerEvent()
 entry2.callback : AddListener( function() 
-	print( ' - 抬起 - ' .. CS.UnityEngine.Input.mousePosition : ToString() ) 
+--	print( ' - 抬起 - ' .. CS.UnityEngine.Input.mousePosition : ToString() ) 
 	endPot = CS.UnityEngine.Input.mousePosition
 	calDir()
 end )
